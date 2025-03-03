@@ -166,31 +166,31 @@ function ProjectDetail() {
     },
   ];
   // Mục tabs trong project detail
-  const items: TabsProps['items'] = [
-    ...(sheets?.map((sheet: Sheet) => ({
-      key: sheet.id,
-      label: sheet.name,
-      children: (
-        <div>
-          <Popconfirm
-            title='Bạn có chắc chắn muốn xóa sheet này không?'
-            onConfirm={() => handleDeleteSheet(sheet.id)}
-            okText='Yes'
-            cancelText='No'
-          >
-            <Button type='primary' danger icon={<DeleteOutlined />}>
-              Xóa Sheet
-            </Button>
-          </Popconfirm>
-        </div>
-      ),
-    })) || []),
-    {
-      key: 'settings',
-      label: <SettingOutlined />,
-      children: <div>Cài đặt dự án</div>,
-    },
-  ];
+  // const items: TabsProps['items'] = [
+  //   ...(sheets?.map((sheet: Sheet) => ({
+  //     key: sheet.id,
+  //     label: sheet.name,
+  //     children: (
+  //       <div>
+  //         <Popconfirm
+  //           title='Bạn có chắc chắn muốn xóa sheet này không?'
+  //           onConfirm={() => handleDeleteSheet(sheet.id)}
+  //           okText='Yes'
+  //           cancelText='No'
+  //         >
+  //           <Button type='primary' danger icon={<DeleteOutlined />}>
+  //             Xóa Sheet
+  //           </Button>
+  //         </Popconfirm>
+  //       </div>
+  //     ),
+  //   })) || []),
+  //   {
+  //     key: 'settings',
+  //     label: <SettingOutlined />,
+  //     children: <div>Cài đặt dự án</div>,
+  //   },
+  // ];
 
   // Gọi modal thêm sheet
   const addSheet = () => {
@@ -231,29 +231,29 @@ function ProjectDetail() {
     }
   };
 
-  // const items: TabsProps['items'] = [
-  //   {
-  //     key: '1',
-  //     label: 'Công việc chung',
-  //     children: <Table columns={columns} dataSource={[]} />,
-  //   },
-  //   ...(sheets?.map((sheet: Sheet) => ({
-  //     key: sheet.id,
-  //     label: sheet.name,
-  //     children: (
-  //       <SheetTable
-  //         key={sheet.id}
-  //         sheet={sheet}
-  //         handleDeleteSheet={handleDeleteSheet}
-  //       />
-  //     ),
-  //   })) || []),
-  //   {
-  //     key: 'settings',
-  //     label: <SettingOutlined />,
-  //     children: <div>Cài đặt dự án</div>,
-  //   },
-  // ];
+  const items: TabsProps['items'] = [
+    {
+      key: '1',
+      label: 'Công việc chung',
+      children: <Table columns={columns} dataSource={[]} />,
+    },
+    ...(sheets?.map((sheet: Sheet) => ({
+      key: sheet.id,
+      label: sheet.name,
+      children: (
+        <SheetTable
+          key={sheet.id}
+          sheet={sheet}
+          handleDeleteSheet={handleDeleteSheet}
+        />
+      ),
+    })) || []),
+    {
+      key: 'settings',
+      label: <SettingOutlined />,
+      children: <div>Cài đặt dự án</div>,
+    },
+  ];
 
   if (isLoading)
     return (

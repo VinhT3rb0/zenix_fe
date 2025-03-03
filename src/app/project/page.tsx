@@ -1,44 +1,256 @@
 "use client";
-import { useGetProjectsQuery } from "@/api/app_project/app_project";
-import { Card, Col, Row, Spin, Alert } from "antd";
+import { useGetProjectsQuery, useCreateProjectMutation, useUpdateProjectMutation, useDeleteProjectMutation } from "@/api/app_project/app_project";
+import { Card, Col, Row, Spin, Alert, Typography, theme, Button } from "antd";
 import Link from "next/link";
+import { CalendarOutlined, ProjectOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
+import { CSSProperties, useState } from "react";
+import ProjectModal from "./components/ProjectModal/page";
+
+const { Title } = Typography;
+
+interface Project {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  description?: string;
+}
+
+interface ProjectsResponse {
+  results: Project[];
+}
 
 function ProjectList() {
-  const { data, error, isLoading } = useGetProjectsQuery();
+  const {
+    token: { colorPrimary, colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
 
-  if (isLoading) return <Spin tip="Loading..." />;
-  if (error) return <Alert message="Error loading projects" type="error" />;
+  const { data, error, isLoading } = useGetProjectsQuery<{
+    data?: ProjectsResponse;
+    error?: any;
+    isLoading: boolean;
+  }>();
 
-  // Kiểm tra dữ liệu trả về có đúng dạng mảng không
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
+
+  const [createProject] = useCreateProjectMutation();
+  const [updateProject] = useUpdateProjectMutation();
+  const [deleteProject] = useDeleteProjectMutation();
+
+  const showModal = (project?: Project) => {
+    setIsEditMode(!!project);
+    setCurrentProject(project || null);
+    setIsModalVisible(true);
+  };
+
+  const handleOk = async (values: any) => {
+    try {
+      if (isEditMode && currentProject) {
+        await updateProject({ id: currentProject.id, ...values });
+      } else {
+        await createProject(values);
+      }
+      setIsModalVisible(false);
+    } catch (error) {
+      console.error("Failed to save project:", error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteProject({ id });
+    } catch (error) {
+      console.error("Failed to delete project:", error);
+    }
+  };
+
+  const formatDate = (dateString: string): string => dayjs(dateString).format("DD/MM/YYYY");
+
+  if (isLoading)
+    return (
+      <div style={centerContainerStyle}>
+        <Spin size="large" tip="Đang tải dự án..." />
+      </div>
+    );
+
+  if (error)
+    return (
+      <div style={pagePaddingStyle}>
+        <Alert
+          message="Lỗi khi tải dữ liệu"
+          description="Không thể tải danh sách dự án. Vui lòng thử lại sau."
+          type="error"
+          showIcon
+          closable
+          style={alertStyle}
+        />
+      </div>
+    );
+
   const projects = Array.isArray(data?.results) ? data.results : [];
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Danh sách Dự Án</h2>
+    <div style={{ ...pagePaddingStyle, maxWidth: "1440px", margin: "0 auto" }}>
+      <Title level={2} style={{ ...titleStyle, color: 'black' }}>
+        <ProjectOutlined /> DANH SÁCH DỰ ÁN
+      </Title>
+      <Button type="primary" onClick={() => showModal()} style={{ marginBottom: "16px" }}>
+        Thêm dự án
+      </Button>
+
       {projects.length === 0 ? (
-        <Alert message="Không có dự án nào." type="info" />
+        <Alert
+          message="Không có dự án"
+          description="Hiện chưa có dự án nào được tạo. Hãy tạo dự án đầu tiên!"
+          type="info"
+          showIcon
+          style={alertStyle}
+        />
       ) : (
-        <Row gutter={[16, 16]}>
-          {projects.map((project: any) => (
-            <Col key={project.id} xs={24} sm={12} md={8} lg={6}>
-              <Link href={`/project/${project.id}`}>
-                <Card
-                  title={project.name}
-                  bordered={true}
-                  style={{ width: "100%", cursor: "pointer" }}
-                  hoverable
-                >
-                  <p><strong>Ngày bắt đầu:</strong> {project.start_date}</p>
-                  <p><strong>Ngày kết thúc:</strong> {project.end_date}</p>
-                  <p>{project.description}</p>
-                </Card>
-              </Link>
+        <Row gutter={[24, 24]} justify="center">
+          {projects.map((project: Project) => (
+            <Col key={project.id} xs={24} sm={12} lg={8} xl={6}>
+              <Card
+                hoverable
+                style={{
+                  ...cardStyle,
+                  background: colorBgContainer,
+                  borderRadius: borderRadiusLG,
+                }}
+                bodyStyle={cardBodyStyle}
+                cover={
+                  <div style={cardHeaderStyle(colorPrimary)}>
+                    <ProjectOutlined style={projectIconStyle} />
+                  </div>
+                }
+                actions={[
+                  <Button type="link" onClick={() => showModal(project)}>Chỉnh sửa</Button>,
+                  <Button type="link" danger onClick={() => handleDelete(project.id)}>Xóa</Button>,
+                ]}
+              >
+                <Link href={`/project/${project.id}`} style={linkStyle}>
+                  <Title level={4} ellipsis style={projectTitleStyle}>
+                    {project.name}
+                  </Title>
+
+                  <DateInfoItem
+                    label="Ngày bắt đầu:"
+                    date={formatDate(project.start_date)}
+                    colorPrimary={colorPrimary}
+                  />
+
+                  <DateInfoItem
+                    label="Ngày kết thúc:"
+                    date={formatDate(project.end_date)}
+                    colorPrimary={colorPrimary}
+                  />
+
+                  <div style={descriptionStyle}>
+                    {project.description || "Không có mô tả"}
+                  </div>
+                </Link>
+              </Card>
             </Col>
           ))}
         </Row>
       )}
+
+      <ProjectModal
+        visible={isModalVisible}
+        isEditMode={isEditMode}
+        project={currentProject}
+        onOk={handleOk}
+        onCancel={() => setIsModalVisible(false)}
+      />
     </div>
   );
 }
+
+// Reusable components
+const DateInfoItem: React.FC<{
+  label: string;
+  date: string;
+  colorPrimary: string
+}> = ({ label, date, colorPrimary }) => (
+  <div style={dateItemStyle}>
+    <CalendarOutlined style={{ marginRight: 8, color: colorPrimary }} />
+    <span style={{ fontWeight: 500 }}>{label}</span>
+    <span style={{ marginLeft: 8 }}>{date}</span>
+  </div>
+);
+
+// Styles
+const pagePaddingStyle: CSSProperties = {
+  padding: "24px",
+};
+
+const centerContainerStyle: CSSProperties = {
+  display: "flex",
+  justifyContent: "center",
+  padding: "100px",
+};
+
+const alertStyle: CSSProperties = {
+  maxWidth: "800px",
+  margin: "0 auto",
+};
+
+const titleStyle: CSSProperties = {
+  textAlign: "center",
+  marginBottom: "32px",
+};
+
+const linkStyle: CSSProperties = {
+  height: "100%",
+  textDecoration: "none",
+};
+
+const cardStyle: CSSProperties = {
+  height: "100%",
+  boxShadow: "0 4px 8px rgba(0,0,0,0.05)",
+  transition: "all 0.3s ease",
+};
+
+const cardBodyStyle: CSSProperties = {
+  padding: "16px",
+};
+
+const cardHeaderStyle = (color: string): CSSProperties => ({
+  height: "120px",
+  background: `linear-gradient(135deg, ${color} 0%, #87d068 100%)`,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+});
+
+const projectIconStyle: CSSProperties = {
+  fontSize: "48px",
+  color: "#fff",
+};
+
+const projectTitleStyle: CSSProperties = {
+  marginBottom: "16px",
+};
+
+const dateItemStyle: CSSProperties = {
+  marginBottom: "12px",
+  display: "flex",
+  alignItems: "center",
+};
+
+const descriptionStyle: CSSProperties = {
+  color: "#666",
+  lineHeight: 1.6,
+  minHeight: "60px",
+  maxHeight: "80px",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  display: "-webkit-box",
+  WebkitLineClamp: 3,
+  WebkitBoxOrient: "vertical",
+};
 
 export default ProjectList;

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { Card, Spin, Alert } from "antd";
 
 function ProjectDetail() {
-  const { id } = useParams(); // Lấy projectId từ URL
+  const { id } = useParams();
   const router = useRouter();
 
   const { data: project, error, isLoading } = useGetProjectDetailQuery(id);

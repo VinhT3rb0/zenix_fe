@@ -6,13 +6,13 @@ export const apiProject = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: `${process.env.NEXT_PUBLIC_API_URL}/api/app-project/v1/`,
     prepareHeaders: (headers, { getState }) => {
-        const accessToken = getAccessTokenFromCookie();
-        if (accessToken) {
-            headers.set("Authorization", `Bearer ${accessToken}`);
-        }
-        return headers;
+      const accessToken = getAccessTokenFromCookie();
+      if (accessToken) {
+        headers.set("Authorization", `Bearer ${accessToken}`);
+      }
+      return headers;
     },
-}),
+  }),
   reducerPath: "projectApi",
   tagTypes: ["Project", "Task", "Sheet", "Comment", "Status"],
   endpoints: (builder) => ({
@@ -75,6 +75,16 @@ export const apiProject = createApi({
       invalidatesTags: ["Project"],
     }),
 
+    // Chỉnh sửa dự án
+    updateProject: builder.mutation<any, { id: string; name: string; description: string }>({
+      query: ({ id, name, description }) => ({
+        url: `projects/${id}/`,
+        method: "PUT",
+        body: { name, description },
+      }),
+      invalidatesTags: ["Project"],
+    }),
+
     // Xóa một dự án
     deleteProject: builder.mutation<any, { id: string }>({
       query: ({ id }) => ({
@@ -86,7 +96,6 @@ export const apiProject = createApi({
   }),
 });
 
-// Export các hooks để sử dụng trong component
 export const {
   useGetProjectsQuery,
   useGetProjectDetailQuery,
@@ -97,5 +106,6 @@ export const {
   useGetCommentsQuery,
   useCreateProjectMutation,
   useUpdateProjectStatusMutation,
+  useUpdateProjectMutation,
   useDeleteProjectMutation,
 } = apiProject;

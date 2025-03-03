@@ -1,12 +1,16 @@
 'use client';
 import {
   useGetProjectDetailQuery,
+  useGetProjectStatusQuery,
   useGetSheetsQuery,
+  useUpdateProjectStatusMutation,
+  useDeleteSheetMutation,
 } from '@/api/app_project/app_project';
 import {
   AppstoreOutlined,
   PlusOutlined,
   SettingOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import type { TabsProps } from 'antd';
 import {
@@ -15,15 +19,19 @@ import {
   Card,
   Col,
   Descriptions,
+  message,
   Row,
+  Select,
   Spin,
   Table,
   Tabs,
   Tag,
+  Popconfirm,
 } from 'antd';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AddSheets from './AddSheets';
+import { Option } from 'antd/es/mentions';
 
 interface Sheet {
   id: string;
@@ -72,8 +80,10 @@ function ProjectDetail() {
   const { id } = useParams();
   const router = useRouter();
   const projectId = Array.isArray(id) ? id[0] : id;
-
   const { data: sheetsData } = useGetSheetsQuery();
+  const { data: statusData, refetch: refetchStatus } = useGetProjectStatusQuery({ projectId });
+  const [updateProjectStatus] = useUpdateProjectStatusMutation();
+  const [deleteSheet] = useDeleteSheetMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const {
@@ -101,7 +111,21 @@ function ProjectDetail() {
     ...(sheets?.map((sheet: Sheet) => ({
       key: sheet.id,
       label: sheet.name,
-      children: <Table columns={columns} dataSource={sheet.data} />,
+      children: (
+        <div>
+          <Table columns={columns} dataSource={sheet.data} />
+          <Popconfirm
+            title="Bạn có chắc chắn muốn xóa sheet này không?"
+            onConfirm={() => handleDeleteSheet(sheet.id)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button type="primary" danger icon={<DeleteOutlined />}>
+              Xóa Sheet
+            </Button>
+          </Popconfirm>
+        </div>
+      ),
     })) || []),
     {
       key: 'settings',
@@ -109,8 +133,36 @@ function ProjectDetail() {
       children: <div>Cài đặt dự án</div>,
     },
   ];
+
   const addSheet = () => {
     setIsModalOpen(true);
+  };
+
+  const handleDeleteSheet = async (sheetId: string) => {
+    try {
+      await deleteSheet({ id: sheetId });
+      message.success("Sheet đã được xóa.");
+      setSheets((prev) => prev.filter((sheet) => sheet.id !== sheetId));
+    } catch (error) {
+      message.error("Xóa sheet thất bại.");
+    }
+  };
+
+  const handleStatusChange = async (value: string) => {
+    let color = "";
+    if (value === "Completed") {
+      color = "#dD427a";
+    } else if (value === "In Progress") {
+      color = "#FFA500";
+    }
+
+    try {
+      await updateProjectStatus({ id: projectId, name: value, color, user: 1 });
+      message.success("Trạng thái dự án đã được cập nhật.");
+      refetchStatus(); // Refetch the status data to update the UI
+    } catch (error) {
+      message.error("Cập nhật trạng thái dự án thất bại.");
+    }
   };
 
   if (isLoading)
@@ -200,7 +252,7 @@ function ProjectDetail() {
                   ))}
                 </div>
               </Descriptions.Item>
-              {/* <Descriptions.Item label="Trạng thái">
+              <Descriptions.Item label="Trạng thái">
                 <Select
                   value={statusData?.name}
                   onChange={handleStatusChange}
@@ -210,7 +262,7 @@ function ProjectDetail() {
                   <Option value="In Progress">In Progress</Option>
                   <Option value="Completed">Completed</Option>
                 </Select>
-              </Descriptions.Item> */}
+              </Descriptions.Item>
             </Descriptions>
           </Card>
         </Col>

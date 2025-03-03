@@ -51,16 +51,14 @@ export const apiProject = createApi({
       query: () => 'comments/',
       providesTags: ['Comment'],
     }),
-    createProject: builder.mutation<any, { name: string; description: string }>(
-      {
-        query: (newProject) => ({
-          url: 'projects/',
-          method: 'POST',
-          body: newProject,
-        }),
-        invalidatesTags: ['Project'],
-      }
-    ),
+    createProject: builder.mutation<any, { name: string; description: string }>({
+      query: (newProject) => ({
+        url: 'projects/',
+        method: 'POST',
+        body: newProject,
+      }),
+      invalidatesTags: ['Project'],
+    }),
     createSheets: builder.mutation<any, { name: string; project: string }>({
       query: (newSheet) => ({
         url: 'sheets/',
@@ -76,10 +74,7 @@ export const apiProject = createApi({
       }),
       invalidatesTags: ['Project'],
     }),
-    updateProject: builder.mutation<
-      any,
-      { id: string; name: string; description: string }
-    >({
+    updateProject: builder.mutation<any, { id: string; name: string; description: string }>({
       query: ({ id, name, description }) => ({
         url: `projects/${id}/`,
         method: 'PUT',
@@ -93,6 +88,13 @@ export const apiProject = createApi({
         method: 'DELETE',
       }),
       invalidatesTags: ['Project'],
+    }),
+    deleteSheet: builder.mutation<any, { id: string }>({
+      query: ({ id }) => ({
+        url: `sheets/${id}/`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Sheet'],
     }),
   }),
 });
@@ -111,4 +113,5 @@ export const {
   useUpdateProjectMutation,
   useCreateSheetsMutation,
   useDeleteProjectMutation,
+  useDeleteSheetMutation,
 } = apiProject;

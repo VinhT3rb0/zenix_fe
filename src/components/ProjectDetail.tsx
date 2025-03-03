@@ -7,6 +7,7 @@ import {
   useDeleteSheetMutation,
   useGetTasksQuery,
   useDeleteTaskMutation,
+  useGetAllProjectStatusesQuery,
 } from '@/api/app_project/app_project';
 import {
   AppstoreOutlined,
@@ -23,17 +24,18 @@ import {
   Col,
   Descriptions,
   message,
+  Popconfirm,
   Row,
   Select,
   Spin,
   Table,
   Tabs,
   Tag,
-  Popconfirm,
 } from 'antd';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AddSheets from './AddSheets';
+import SheetTable from './sheetTable';
 import { Option } from 'antd/es/mentions';
 import AddTasks from './AddTasks';
 
@@ -53,6 +55,12 @@ interface ProjectDetail {
   team_members: string[];
 }
 
+interface Status {
+  id: string;
+  name: string;
+  color: string;
+}
+
 function ProjectDetail() {
   const { id } = useParams();
   const router = useRouter();
@@ -70,6 +78,7 @@ function ProjectDetail() {
   const [tasksList, setTasksList] = useState<any[]>([]);
   const [deleteTask] = useDeleteTaskMutation();
   const { refetch: refetchTasks } = useGetTasksQuery();
+  const { data: allStatusesData } = useGetAllProjectStatusesQuery();
 
   const {
     data: project,
@@ -222,6 +231,30 @@ function ProjectDetail() {
     }
   };
 
+  // const items: TabsProps['items'] = [
+  //   {
+  //     key: '1',
+  //     label: 'Công việc chung',
+  //     children: <Table columns={columns} dataSource={[]} />,
+  //   },
+  //   ...(sheets?.map((sheet: Sheet) => ({
+  //     key: sheet.id,
+  //     label: sheet.name,
+  //     children: (
+  //       <SheetTable
+  //         key={sheet.id}
+  //         sheet={sheet}
+  //         handleDeleteSheet={handleDeleteSheet}
+  //       />
+  //     ),
+  //   })) || []),
+  //   {
+  //     key: 'settings',
+  //     label: <SettingOutlined />,
+  //     children: <div>Cài đặt dự án</div>,
+  //   },
+  // ];
+
   if (isLoading)
     return (
       <div
@@ -338,9 +371,11 @@ function ProjectDetail() {
                   onChange={handleStatusChange}
                   style={{ width: '100%' }}
                 >
-                  <Option value='Not Started'>Not Started</Option>
-                  <Option value='In Progress'>In Progress</Option>
-                  <Option value='Completed'>Completed</Option>
+                  {allStatusesData?.results.map((status: Status) => (
+                    <Option key={status.id} value={status.name}>
+                      {status.name}
+                    </Option>
+                  ))}
                 </Select>
               </Descriptions.Item>
             </Descriptions>

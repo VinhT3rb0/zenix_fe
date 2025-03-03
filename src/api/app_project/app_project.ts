@@ -26,36 +26,26 @@ export const apiProject = createApi({
       providesTags: ["Project"],
     }),
     // Lấy trạng thái của dự án
-    getProjectStatus: builder.query<any, void>({
-      query: () => "project-status/",
-      providesTags: ["Project"],
+    getProjectStatus: builder.query<any, { projectId: string }>({
+      query: ({ projectId }) => `projects/${projectId}/status/`,
+      providesTags: ["Status"],
     }),
-
-    // Lấy danh sách bảng (Sheet)
     getSheets: builder.query<any, void>({
       query: () => "sheets/",
       providesTags: ["Sheet"],
     }),
-
-    // Lấy danh sách trạng thái (Status)
     getStatuses: builder.query<any, void>({
       query: () => "statuses/",
       providesTags: ["Status"],
     }),
-
-    // Lấy danh sách công việc (Tasks)
     getTasks: builder.query<any, void>({
       query: () => "tasks/",
       providesTags: ["Task"],
     }),
-
-    // Lấy danh sách bình luận (Comments)
     getComments: builder.query<any, void>({
       query: () => "comments/",
       providesTags: ["Comment"],
     }),
-
-    // Thêm mới dự án
     createProject: builder.mutation<any, { name: string; description: string }>({
       query: (newProject) => ({
         url: "projects/",
@@ -64,8 +54,6 @@ export const apiProject = createApi({
       }),
       invalidatesTags: ["Project"],
     }),
-
-    // Cập nhật trạng thái của dự án
     updateProjectStatus: builder.mutation<any, { id: string; status: string }>({
       query: ({ id, status }) => ({
         url: `project-status/${id}/`,
@@ -74,8 +62,6 @@ export const apiProject = createApi({
       }),
       invalidatesTags: ["Project"],
     }),
-
-    // Chỉnh sửa dự án
     updateProject: builder.mutation<any, { id: string; name: string; description: string }>({
       query: ({ id, name, description }) => ({
         url: `projects/${id}/`,
@@ -84,8 +70,6 @@ export const apiProject = createApi({
       }),
       invalidatesTags: ["Project"],
     }),
-
-    // Xóa một dự án
     deleteProject: builder.mutation<any, { id: string }>({
       query: ({ id }) => ({
         url: `projects/${id}/`,

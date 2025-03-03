@@ -1,6 +1,6 @@
 "use client";
 import { useGetProjectsQuery, useCreateProjectMutation, useUpdateProjectMutation, useDeleteProjectMutation } from "@/api/app_project/app_project";
-import { Card, Col, Row, Spin, Alert, Typography, theme, Button } from "antd";
+import { Card, Col, Row, Spin, Alert, Typography, theme, Button, Tag } from "antd";
 import Link from "next/link";
 import { CalendarOutlined, ProjectOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -15,6 +15,7 @@ interface Project {
   start_date: string;
   end_date: string;
   description?: string;
+  status: string; // Thêm trường status
 }
 
 interface ProjectsResponse {
@@ -150,6 +151,9 @@ function ProjectList() {
 
                   <div style={descriptionStyle}>
                     {project.description || "Không có mô tả"}
+                  </div>
+                  <div style={{ marginTop: "8px" }}>
+                    <Tag color={project.color}>{project.status}</Tag>
                   </div>
                 </Link>
               </Card>

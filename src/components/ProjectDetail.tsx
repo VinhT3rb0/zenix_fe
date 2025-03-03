@@ -1,10 +1,12 @@
 "use client";
-import { useGetProjectDetailQuery } from "@/api/app_project/app_project";
+import { useGetProjectDetailQuery, useGetProjectStatusQuery, useUpdateProjectStatusMutation } from "@/api/app_project/app_project";
 import { useRouter, useParams } from "next/navigation";
-import { Card, Spin, Alert, Tabs, Button, Table, Descriptions, Tag, Row, Col } from "antd";
+import { Card, Spin, Alert, Tabs, Button, Table, Descriptions, Tag, Row, Col, Select, message } from "antd";
 import { PlusOutlined, SettingOutlined, AppstoreOutlined } from "@ant-design/icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { TabsProps } from "antd";
+
+const { Option } = Select;
 
 interface Sheet {
   id: string;
@@ -54,6 +56,8 @@ function ProjectDetail() {
   const projectId = Array.isArray(id) ? id[0] : id;
 
   const { data: project, error, isLoading } = useGetProjectDetailQuery(projectId);
+  const { data: statusData, refetch: refetchStatus } = useGetProjectStatusQuery({ projectId });
+  const [updateProjectStatus] = useUpdateProjectStatusMutation();
 
   const addSheet = () => {
     const newSheet: Sheet = {
@@ -70,6 +74,23 @@ function ProjectDetail() {
       ]
     };
     setSheets([...sheets, newSheet]);
+  };
+
+  const handleStatusChange = async (value: string) => {
+    let color = "";
+    if (value === "Completed") {
+      color = "#dD427a";
+    } else if (value === "In Progress") {
+      color = "#FFA500";
+    }
+
+    try {
+      await updateProjectStatus({ id: projectId, name: value, color, user: 1 });
+      message.success("Trạng thái dự án đã được cập nhật.");
+      refetchStatus(); // Refetch the status data to update the UI
+    } catch (error) {
+      message.error("Cập nhật trạng thái dự án thất bại.");
+    }
   };
 
   const items: TabsProps['items'] = [
@@ -154,6 +175,17 @@ function ProjectDetail() {
                     <Tag key={member} color="blue">{member}</Tag>
                   ))}
                 </div>
+              </Descriptions.Item>
+              <Descriptions.Item label="Trạng thái">
+                <Select
+                  value={statusData?.name}
+                  onChange={handleStatusChange}
+                  style={{ width: '100%' }}
+                >
+                  <Option value="Not Started">Not Started</Option>
+                  <Option value="In Progress">In Progress</Option>
+                  <Option value="Completed">Completed</Option>
+                </Select>
               </Descriptions.Item>
             </Descriptions>
           </Card>

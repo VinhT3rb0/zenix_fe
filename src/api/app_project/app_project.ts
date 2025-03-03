@@ -25,9 +25,14 @@ export const apiProject = createApi({
       query: (projectId) => `projects/${projectId}/`,
       providesTags: ["Project"],
     }),
-    // Lấy trạng thái của dự án
+    // Lấy trạng thái của tất cả dự án
+    getAllProjectStatuses: builder.query<any, void>({
+      query: () => "project-status/",
+      providesTags: ["Status"],
+    }),
+    // Lấy trạng thái của dự án bằng id dự án
     getProjectStatus: builder.query<any, { projectId: string }>({
-      query: ({ projectId }) => `projects/${projectId}/status/`,
+      query: ({ projectId }) => `project-status/${projectId}/`,
       providesTags: ["Status"],
     }),
     getSheets: builder.query<any, void>({
@@ -54,11 +59,11 @@ export const apiProject = createApi({
       }),
       invalidatesTags: ["Project"],
     }),
-    updateProjectStatus: builder.mutation<any, { id: string; status: string }>({
-      query: ({ id, status }) => ({
+    updateProjectStatus: builder.mutation<any, { id: string; name: string; color: string; user: number }>({
+      query: ({ id, name, color, user }) => ({
         url: `project-status/${id}/`,
-        method: "PATCH",
-        body: { status },
+        method: "PUT",
+        body: { name, color, user },
       }),
       invalidatesTags: ["Project"],
     }),
@@ -84,6 +89,7 @@ export const {
   useGetProjectsQuery,
   useGetProjectDetailQuery,
   useGetProjectStatusQuery,
+  useGetAllProjectStatusesQuery,
   useGetSheetsQuery,
   useGetStatusesQuery,
   useGetTasksQuery,

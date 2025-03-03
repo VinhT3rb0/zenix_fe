@@ -1,10 +1,10 @@
 "use client";
-import { useGetProjectsQuery, useCreateProjectMutation, useUpdateProjectMutation, useDeleteProjectMutation } from "@/api/app_project/app_project";
+import { useGetProjectsQuery, useCreateProjectMutation, useUpdateProjectMutation, useDeleteProjectMutation, useGetAllProjectStatusesQuery } from "@/api/app_project/app_project";
 import { Card, Col, Row, Spin, Alert, Typography, theme, Button, Tag } from "antd";
 import Link from "next/link";
 import { CalendarOutlined, ProjectOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { CSSProperties, useState } from "react";
+import { CSSProperties, useState, useEffect } from "react";
 import ProjectModal from "./components/ProjectModal/page";
 
 const { Title } = Typography;
@@ -15,11 +15,20 @@ interface Project {
   start_date: string;
   end_date: string;
   description?: string;
-  status: string; // Thêm trường status
+}
+
+interface Status {
+  id: number;
+  name: string;
+  color: string;
 }
 
 interface ProjectsResponse {
   results: Project[];
+}
+
+interface StatusesResponse {
+  results: Status[];
 }
 
 function ProjectList() {
@@ -29,6 +38,12 @@ function ProjectList() {
 
   const { data, error, isLoading } = useGetProjectsQuery<{
     data?: ProjectsResponse;
+    error?: any;
+    isLoading: boolean;
+  }>();
+
+  const { data: statusesData, isLoading: isStatusesLoading } = useGetAllProjectStatusesQuery<{
+    data?: StatusesResponse;
     error?: any;
     isLoading: boolean;
   }>();
@@ -70,7 +85,7 @@ function ProjectList() {
 
   const formatDate = (dateString: string): string => dayjs(dateString).format("DD/MM/YYYY");
 
-  if (isLoading)
+  if (isLoading || isStatusesLoading)
     return (
       <div style={centerContainerStyle}>
         <Spin size="large" tip="Đang tải dự án..." />
@@ -92,6 +107,7 @@ function ProjectList() {
     );
 
   const projects = Array.isArray(data?.results) ? data.results : [];
+  const projectStatuses = Array.isArray(statusesData?.results) ? statusesData.results : [];
 
   return (
     <div style={{ ...pagePaddingStyle, maxWidth: "1440px", margin: "0 auto" }}>
@@ -112,53 +128,56 @@ function ProjectList() {
         />
       ) : (
         <Row gutter={[24, 24]} justify="center">
-          {projects.map((project: Project) => (
-            <Col key={project.id} xs={24} sm={12} lg={8} xl={6}>
-              <Card
-                hoverable
-                style={{
-                  ...cardStyle,
-                  background: colorBgContainer,
-                  borderRadius: borderRadiusLG,
-                }}
-                bodyStyle={cardBodyStyle}
-                cover={
-                  <div style={cardHeaderStyle(colorPrimary)}>
-                    <ProjectOutlined style={projectIconStyle} />
-                  </div>
-                }
-                actions={[
-                  <Button type="link" onClick={() => showModal(project)}>Chỉnh sửa</Button>,
-                  <Button type="link" danger onClick={() => handleDelete(project.id)}>Xóa</Button>,
-                ]}
-              >
-                <Link href={`/project/${project.id}`} style={linkStyle}>
-                  <Title level={4} ellipsis style={projectTitleStyle}>
-                    {project.name}
-                  </Title>
+          {projects.map((project: Project) => {
+            const projectStatus = projectStatuses.find(status => status.id === parseInt(project.id));
+            return (
+              <Col key={project.id} xs={24} sm={12} lg={8} xl={6}>
+                <Card
+                  hoverable
+                  style={{
+                    ...cardStyle,
+                    background: colorBgContainer,
+                    borderRadius: borderRadiusLG,
+                  }}
+                  bodyStyle={cardBodyStyle}
+                  cover={
+                    <div style={cardHeaderStyle(colorPrimary)}>
+                      <ProjectOutlined style={projectIconStyle} />
+                    </div>
+                  }
+                  actions={[
+                    <Button type="link" onClick={() => showModal(project)}>Chỉnh sửa</Button>,
+                    <Button type="link" danger onClick={() => handleDelete(project.id)}>Xóa</Button>,
+                  ]}
+                >
+                  <Link href={`/project/${project.id}`} style={linkStyle}>
+                    <Title level={4} ellipsis style={projectTitleStyle}>
+                      {project.name}
+                    </Title>
 
-                  <DateInfoItem
-                    label="Ngày bắt đầu:"
-                    date={formatDate(project.start_date)}
-                    colorPrimary={colorPrimary}
-                  />
+                    <DateInfoItem
+                      label="Ngày bắt đầu:"
+                      date={formatDate(project.start_date)}
+                      colorPrimary={colorPrimary}
+                    />
 
-                  <DateInfoItem
-                    label="Ngày kết thúc:"
-                    date={formatDate(project.end_date)}
-                    colorPrimary={colorPrimary}
-                  />
+                    <DateInfoItem
+                      label="Ngày kết thúc:"
+                      date={formatDate(project.end_date)}
+                      colorPrimary={colorPrimary}
+                    />
 
-                  <div style={descriptionStyle}>
-                    {project.description || "Không có mô tả"}
-                  </div>
-                  <div style={{ marginTop: "8px" }}>
-                    <Tag color={project.color}>{project.status}</Tag>
-                  </div>
-                </Link>
-              </Card>
-            </Col>
-          ))}
+                    <div style={descriptionStyle}>
+                      {project.description || "Không có mô tả"}
+                    </div>
+                    <div style={{ marginTop: "8px" }}>
+                      <Tag color={projectStatus?.color}>{projectStatus?.name}</Tag>
+                    </div>
+                  </Link>
+                </Card>
+              </Col>
+            );
+          })}
         </Row>
       )}
 

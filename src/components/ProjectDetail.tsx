@@ -5,12 +5,12 @@ import {
   useGetSheetsQuery,
   useUpdateProjectStatusMutation,
   useDeleteSheetMutation,
+  useGetAllProjectStatusesQuery,
 } from '@/api/app_project/app_project';
 import {
   AppstoreOutlined,
   PlusOutlined,
   SettingOutlined,
-  DeleteOutlined,
 } from '@ant-design/icons';
 import type { TabsProps } from 'antd';
 import {
@@ -26,11 +26,11 @@ import {
   Table,
   Tabs,
   Tag,
-  Popconfirm,
 } from 'antd';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AddSheets from './AddSheets';
+import SheetTable from './sheetTable';
 import { Option } from 'antd/es/mentions';
 
 interface Sheet {
@@ -47,6 +47,12 @@ interface ProjectDetail {
   description: string;
   user: string;
   team_members: string[];
+}
+
+interface Status {
+  id: number;
+  name: string;
+  color: string;
 }
 
 const columns = [
@@ -82,6 +88,7 @@ function ProjectDetail() {
   const projectId = Array.isArray(id) ? id[0] : id;
   const { data: sheetsData } = useGetSheetsQuery();
   const { data: statusData, refetch: refetchStatus } = useGetProjectStatusQuery({ projectId });
+  const { data: allStatusesData } = useGetAllProjectStatusesQuery();
   const [updateProjectStatus] = useUpdateProjectStatusMutation();
   const [deleteSheet] = useDeleteSheetMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -102,42 +109,6 @@ function ProjectDetail() {
     });
   }, [sheetsData]);
 
-  const items: TabsProps['items'] = [
-    {
-      key: '1',
-      label: 'Công việc chung',
-      children: <Table columns={columns} dataSource={[]} />,
-    },
-    ...(sheets?.map((sheet: Sheet) => ({
-      key: sheet.id,
-      label: sheet.name,
-      children: (
-        <div>
-          <Table columns={columns} dataSource={sheet.data} />
-          <Popconfirm
-            title="Bạn có chắc chắn muốn xóa sheet này không?"
-            onConfirm={() => handleDeleteSheet(sheet.id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button type="primary" danger icon={<DeleteOutlined />}>
-              Xóa Sheet
-            </Button>
-          </Popconfirm>
-        </div>
-      ),
-    })) || []),
-    {
-      key: 'settings',
-      label: <SettingOutlined />,
-      children: <div>Cài đặt dự án</div>,
-    },
-  ];
-
-  const addSheet = () => {
-    setIsModalOpen(true);
-  };
-
   const handleDeleteSheet = async (sheetId: string) => {
     try {
       await deleteSheet({ id: sheetId });
@@ -146,6 +117,10 @@ function ProjectDetail() {
     } catch (error) {
       message.error("Xóa sheet thất bại.");
     }
+  };
+
+  const addSheet = () => {
+    setIsModalOpen(true);
   };
 
   const handleStatusChange = async (value: string) => {
@@ -164,6 +139,30 @@ function ProjectDetail() {
       message.error("Cập nhật trạng thái dự án thất bại.");
     }
   };
+
+  const items: TabsProps['items'] = [
+    {
+      key: '1',
+      label: 'Công việc chung',
+      children: <Table columns={columns} dataSource={[]} />,
+    },
+    ...(sheets?.map((sheet: Sheet) => ({
+      key: sheet.id,
+      label: sheet.name,
+      children: (
+        <SheetTable
+          key={sheet.id}
+          sheet={sheet}
+          handleDeleteSheet={handleDeleteSheet}
+        />
+      ),
+    })) || []),
+    {
+      key: 'settings',
+      label: <SettingOutlined />,
+      children: <div>Cài đặt dự án</div>,
+    },
+  ];
 
   if (isLoading)
     return (
@@ -258,9 +257,11 @@ function ProjectDetail() {
                   onChange={handleStatusChange}
                   style={{ width: '100%' }}
                 >
-                  <Option value="Not Started">Not Started</Option>
-                  <Option value="In Progress">In Progress</Option>
-                  <Option value="Completed">Completed</Option>
+                  {allStatusesData?.results.map((status: Status) => (
+                    <Option key={status.id} value={status.name}>
+                      {status.name}
+                    </Option>
+                  ))}
                 </Select>
               </Descriptions.Item>
             </Descriptions>

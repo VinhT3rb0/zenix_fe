@@ -66,6 +66,14 @@ export const apiProject = createApi({
         body: newSheet,
       }),
     }),
+    createTask: builder.mutation<any, { project: number; status: number; assignees: number[]; title: string; description: string; start_date: string; deadline: string; image: string; file: string; user: number }>({
+      query: (newTask) => ({
+        url: 'tasks/',
+        method: 'POST',
+        body: newTask,
+      }),
+      invalidatesTags: ['Task'],
+    }),
     updateProjectStatus: builder.mutation<any, { id: string; name: string; color: string; user: number }>({
       query: ({ id, name, color, user }) => ({
         url: `project-status/${id}/`,
@@ -112,6 +120,7 @@ export const {
   useUpdateProjectStatusMutation,
   useUpdateProjectMutation,
   useCreateSheetsMutation,
+  useCreateTaskMutation,
   useDeleteProjectMutation,
   useDeleteSheetMutation,
 } = apiProject;

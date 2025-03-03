@@ -27,13 +27,13 @@ export const apiProject = createApi({
     }),
     // Lấy trạng thái của tất cả dự án
     getAllProjectStatuses: builder.query<any, void>({
-      query: () => "project-status/",
-      providesTags: ["Status"],
+      query: () => 'project-status/',
+      providesTags: ['Status'],
     }),
     // Lấy trạng thái của dự án bằng id dự án
     getProjectStatus: builder.query<any, { projectId: string }>({
       query: ({ projectId }) => `project-status/${projectId}/`,
-      providesTags: ["Status"],
+      providesTags: ['Status'],
     }),
     getSheets: builder.query<any, void>({
       query: () => 'sheets/',
@@ -51,14 +51,16 @@ export const apiProject = createApi({
       query: () => 'comments/',
       providesTags: ['Comment'],
     }),
-    createProject: builder.mutation<any, { name: string; description: string }>({
-      query: (newProject) => ({
-        url: 'projects/',
-        method: 'POST',
-        body: newProject,
-      }),
-      invalidatesTags: ['Project'],
-    }),
+    createProject: builder.mutation<any, { name: string; description: string }>(
+      {
+        query: (newProject) => ({
+          url: 'projects/',
+          method: 'POST',
+          body: newProject,
+        }),
+        invalidatesTags: ['Project'],
+      }
+    ),
     createSheets: builder.mutation<any, { name: string; project: string }>({
       query: (newSheet) => ({
         url: 'sheets/',
@@ -66,15 +68,31 @@ export const apiProject = createApi({
         body: newSheet,
       }),
     }),
-    updateProjectStatus: builder.mutation<any, { id: string; name: string; color: string; user: number }>({
+    createTasks: builder.mutation<
+      any,
+      { title: string; sheet: string; project: string }
+    >({
+      query: (data) => ({
+        url: 'tasks/',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    updateProjectStatus: builder.mutation<
+      any,
+      { id: string; name: string; color: string; user: number }
+    >({
       query: ({ id, name, color, user }) => ({
         url: `project-status/${id}/`,
-        method: "PUT",
+        method: 'PUT',
         body: { name, color, user },
       }),
       invalidatesTags: ['Project'],
     }),
-    updateProject: builder.mutation<any, { id: string; name: string; description: string }>({
+    updateProject: builder.mutation<
+      any,
+      { id: string; name: string; description: string }
+    >({
       query: ({ id, name, description }) => ({
         url: `projects/${id}/`,
         method: 'PUT',
@@ -96,6 +114,13 @@ export const apiProject = createApi({
       }),
       invalidatesTags: ['Sheet'],
     }),
+    deleteTask: builder.mutation<any, { id: string }>({
+      query: ({ id }) => ({
+        url: `tasks/${id}/`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Task'],
+    }),
   }),
 });
 
@@ -112,6 +137,8 @@ export const {
   useUpdateProjectStatusMutation,
   useUpdateProjectMutation,
   useCreateSheetsMutation,
+  useCreateTasksMutation,
   useDeleteProjectMutation,
   useDeleteSheetMutation,
+  useDeleteTaskMutation,
 } = apiProject;

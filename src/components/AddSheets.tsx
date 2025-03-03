@@ -1,4 +1,4 @@
-import { Button, Form, Input, Modal } from 'antd';
+import { Button, Form, Input, message, Modal } from 'antd';
 import { useEffect, useState } from 'react';
 import { useCreateSheetsMutation } from '@/api/app_project/app_project';
 import React from 'react';
@@ -35,24 +35,33 @@ const AddSheets = ({
         project: projectId,
       }).unwrap();
 
+      if (result) {
+        message.success('Thêm sheet thành công');
+      }
+
       setSheets((prev: Sheet[]) => [
         ...prev,
         {
           id: result.id,
           name: form.getFieldValue('name'),
           data: [],
-        }
+        },
       ]);
       setIsModalOpen(false);
       form.resetFields();
     } catch (error) {
-      console.error('Failed:', error);
+      message.error('Thêm sheet thất bại');
     }
   };
 
   return (
     <Modal
       title='Thêm Sheet'
+      // open={isModalOpen}
+      // onOk={handleOk}
+
+      // onCancel={handleCancel}
+
       open={isModalOpen}
       onOk={handleOk}
       onCancel={handleCancel}

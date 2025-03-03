@@ -9,17 +9,19 @@ interface Sheet {
   data: any[];
 }
 
+interface Props {
+  isModalOpen: boolean;
+  setIsModalOpen: (isModalOpen: boolean) => void;
+  setSheets: React.Dispatch<React.SetStateAction<Sheet[]>>;
+  projectId: string;
+}
+
 const AddSheets = ({
   isModalOpen,
   setIsModalOpen,
   setSheets,
   projectId,
-}: {
-  isModalOpen: boolean;
-  setIsModalOpen: (isModalOpen: boolean) => void;
-  setSheets: React.Dispatch<React.SetStateAction<Sheet[]>>;
-  projectId: string;
-}) => {
+}: Props) => {
   const [form] = Form.useForm();
   const [createSheet, { isLoading }] = useCreateSheetsMutation();
 

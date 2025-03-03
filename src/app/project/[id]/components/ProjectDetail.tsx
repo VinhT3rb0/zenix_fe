@@ -24,6 +24,7 @@ import {
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AddSheets from './AddSheets';
+import AddTaskModal from './AddTaskModal';
 
 interface Sheet {
   id: string;
@@ -72,17 +73,17 @@ function ProjectDetail() {
   const { id } = useParams();
   const router = useRouter();
   const projectId = Array.isArray(id) ? id[0] : id;
-
   const { data: sheetsData } = useGetSheetsQuery();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sheets, setSheets] = useState<Sheet[]>([]);
+  const [activeKey, setActiveKey] = useState(1);
+  const [openTaskModal, setOpenTaskModal] = useState(false)
 
   const {
     data: project,
     error,
     isLoading,
   } = useGetProjectDetailQuery(projectId);
-
-  const [sheets, setSheets] = useState<Sheet[]>([]);
 
   useEffect(() => {
     setSheets((prev) => {
@@ -113,6 +114,9 @@ function ProjectDetail() {
     setIsModalOpen(true);
   };
 
+  const handleAddTask = () => {
+    console.log(activeKey)
+  }
   if (isLoading)
     return (
       <div
@@ -140,23 +144,28 @@ function ProjectDetail() {
         {/* Phần tabs và công việc */}
         <Col span={16}>
           <Tabs
-            defaultActiveKey='1'
+            defaultActiveKey={activeKey as unknown as string}
             items={items}
+            onChange={(key) => setActiveKey(parseInt(key))}
             tabBarExtraContent={
-              <Button
-                type='primary'
-                icon={<PlusOutlined />}
-                style={{ marginRight: '20px' }}
-                onClick={addSheet}
-              >
-                Thêm Sheet
-                <AddSheets
-                  isModalOpen={isModalOpen}
-                  setIsModalOpen={setIsModalOpen}
-                  setSheets={setSheets}
-                  projectId={projectId}
-                />
-              </Button>
+              <div>
+                <Button
+                  type='primary'
+                  icon={<PlusOutlined />}
+                  style={{ marginRight: '20px' }}
+                  onClick={addSheet}
+                >
+                  Thêm Sheet
+                </Button>
+                <Button
+                  type='primary'
+                  icon={<PlusOutlined />}
+                  style={{ marginRight: '20px' }}
+                  onClick={() => setOpenTaskModal(true)}
+                >
+                  Thêm công việc
+                </Button>
+              </div>
             }
             style={{
               background: '#fff',
@@ -204,6 +213,19 @@ function ProjectDetail() {
           </Card>
         </Col>
       </Row>
+
+      <AddSheets
+        isModalOpen={isModalOpen}
+        setIsModalOpen={setIsModalOpen}
+        setSheets={setSheets}
+        projectId={projectId}
+      />
+      <AddTaskModal
+        open={openTaskModal}
+        setOpen={setOpenTaskModal}
+        selectedSheetId={activeKey.toString()}
+        projectId={id as string}
+      />
     </div>
   );
 }

@@ -75,7 +75,16 @@ export const apiProject = createApi({
     }),
     createTasks: builder.mutation<
       any,
-      { title: string; assignees: string[]; sheet: string; project: string }
+      {
+        title: string;
+        assignees: string[];
+        sheet: string;
+        project: string;
+        start_date: string;
+        deadline: string;
+        status: number;
+        description: string;
+      }
     >({
       query: (data) => ({
         url: 'tasks/',
@@ -102,7 +111,10 @@ export const apiProject = createApi({
       }),
       invalidatesTags: ['Project'],
     }),
-    updateTask: builder.mutation<any, { id: string; title: string; assignees_names: string[]; status: number }>({
+    updateTask: builder.mutation<
+      any,
+      { id: string; title: string; assignees_names: string[]; status: number }
+    >({
       query: ({ id, ...data }) => ({
         url: `tasks/${id}/`,
         method: 'PUT',

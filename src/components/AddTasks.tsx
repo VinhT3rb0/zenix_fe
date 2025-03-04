@@ -1,4 +1,4 @@
-import { Button, Form, Input, message, Modal, Select } from 'antd';
+import { Button, DatePicker, Form, Input, message, Modal, Select } from 'antd';
 import { useEffect, useState } from 'react';
 import {
   useCreateSheetsMutation,
@@ -47,6 +47,10 @@ const AddTasks = ({
         assignees: assignee,
         project: projectId,
         sheet: sheetsId,
+        start_date: values.start_date.format('YYYY-MM-DD'),
+        deadline: values.deadline.format('YYYY-MM-DD'),
+        status: values.status,
+        description: values.description,
       }).unwrap();
 
       if (result) {
@@ -93,6 +97,23 @@ const AddTasks = ({
               </Select.Option>
             ))}
           </Select>
+        </Form.Item>
+        <div className='flex items-center gap-4'>
+          <Form.Item label='Ngày bắt đầu' name='start_date'>
+            <DatePicker />
+          </Form.Item>
+          <Form.Item label='Ngày kết thúc' name='deadline'>
+            <DatePicker />
+          </Form.Item>
+        </div>
+        <Form.Item label='Trạng thái' name='status'>
+          <Select>
+            <Select.Option value={1}>Đang tiến hành</Select.Option>
+            <Select.Option value={2}>Hoàn thành</Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item label='Mô tả' name='description'>
+          <Input.TextArea />
         </Form.Item>
         <Button type='primary' htmlType='submit'>
           Thêm tasks

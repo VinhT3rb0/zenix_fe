@@ -27,6 +27,9 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
   const { data: statusesData } = useGetStatusesQuery();
   const { data: usersData } = useGetAllUsersQuery();
   const [updateTask] = useUpdateTaskMutation();
+  const [assignees, setAssignees] = useState<any[]>([]);
+
+  console.log(task);
 
   useEffect(() => {
     if (task) {
@@ -80,9 +83,14 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
           label='Người phụ trách'
           rules={[{ required: true, message: 'Vui lòng chọn người phụ trách' }]}
         >
-          <Select mode='multiple'>
+          <Select
+            mode='multiple'
+            onSelect={(value: any) => {
+              setAssignees((prev: any[]) => [...prev, value]);
+            }}
+          >
             {usersData?.results.map((user: any) => (
-              <Option key={user.id} value={user.staff_str.id}>
+              <Option key={user.id} value={user.id}>
                 {user.staff_str.full_name}
               </Option>
             ))}

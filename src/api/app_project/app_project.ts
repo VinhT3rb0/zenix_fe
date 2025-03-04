@@ -14,7 +14,7 @@ export const apiProject = createApi({
     },
   }),
   reducerPath: 'projectApi',
-  tagTypes: ['Project', 'Task', 'Sheet', 'Comment', 'Status'],
+  tagTypes: ['Project', 'Task', 'Sheet', 'Comment', 'Status', 'User'],
   endpoints: (builder) => ({
     // Lấy danh sách dự án
     getProjects: builder.query<any, void>({
@@ -70,7 +70,7 @@ export const apiProject = createApi({
     }),
     createTasks: builder.mutation<
       any,
-      { title: string; sheet: string; project: string }
+      { title: string; assignees: string[]; sheet: string; project: string }
     >({
       query: (data) => ({
         url: 'tasks/',

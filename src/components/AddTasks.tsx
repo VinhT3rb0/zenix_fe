@@ -1,4 +1,4 @@
-import { Button, Form, Input, message, Modal } from 'antd';
+import { Button, Form, Input, message, Modal, Select } from 'antd';
 import { useEffect, useState } from 'react';
 import {
   useCreateSheetsMutation,
@@ -6,6 +6,7 @@ import {
   useGetTasksQuery,
 } from '@/api/app_project/app_project';
 import React from 'react';
+import { useGetAllUsersQuery } from '@/api/app_home/app_home';
 
 interface Sheet {
   id: string;
@@ -27,29 +28,14 @@ const AddTasks = ({
   const [form] = Form.useForm();
   const [createTasks] = useCreateTasksMutation();
   const { refetch: refetchTasks } = useGetTasksQuery();
+  const { data: users } = useGetAllUsersQuery();
+  const [assignee, setAssignee] = useState<any[]>([]);
 
   const handleCancel = () => {
     setIsAddTasksModalOpen(false);
   };
 
   const handleOk = async (values: any) => {
-    // try {
-    //   await form.validateFields();
-    //   const result = await createTasks({
-    //     title: values.title,
-    //     project: projectId,
-    //     sheet: sheetsId,
-    //   }).unwrap();
-
-    //   if (result) {
-    //     message.success('Thêm tasks thành công');
-    //   }
-    // } catch (error) {
-    //   message.error('Thêm tasks thất bại');
-    // }
-
-    console.log(values);
-
     setIsAddTasksModalOpen(false);
   };
 
@@ -58,6 +44,7 @@ const AddTasks = ({
       await form.validateFields();
       const result = await createTasks({
         title: values.title,
+        assignees: assignee,
         project: projectId,
         sheet: sheetsId,
       }).unwrap();
@@ -70,6 +57,8 @@ const AddTasks = ({
     }
 
     refetchTasks();
+    form.resetFields();
+    setAssignee([]);
     setIsAddTasksModalOpen(false);
   };
 
@@ -90,6 +79,23 @@ const AddTasks = ({
           <Input />
         </Form.Item>
 
+        <Form.Item label='Người phụ trách' name='assignee'>
+          <Select
+            placeholder='Chọn người phụ trách'
+            mode='multiple'
+            onSelect={(value: any) => {
+              setAssignee((prev: any[]) => [...prev, value]);
+              console.log(assignee);
+              console.log(value);
+            }}
+          >
+            {users?.results?.map((user: any) => (
+              <Select.Option key={user.id} value={user.id}>
+                {user.staff_str.full_name}
+              </Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
         <Button type='primary' htmlType='submit'>
           Thêm tasks
         </Button>

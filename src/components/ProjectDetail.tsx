@@ -126,8 +126,18 @@ function ProjectDetail() {
     },
     {
       title: 'Người phụ trách',
-      dataIndex: 'assignee',
-      key: 'assignee',
+      dataIndex: 'assignees_names',
+      key: 'assignees_names',
+      render: (text: string[]) => {
+        console.log(text);
+        return text.map((assignee: any) => {
+          return (
+            <div>
+              <p>{assignee}</p>
+            </div>
+          );
+        });
+      },
     },
     {
       title: 'Ngày tạo',

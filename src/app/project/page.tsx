@@ -4,7 +4,7 @@ import { Card, Col, Row, Spin, Alert, Typography, theme, Button, Tag } from "ant
 import Link from "next/link";
 import { CalendarOutlined, ProjectOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { CSSProperties, useState, useEffect } from "react";
+import { CSSProperties, useState } from "react";
 import ProjectModal from "./components/ProjectModal/page";
 
 const { Title } = Typography;
@@ -15,20 +15,11 @@ interface Project {
   start_date: string;
   end_date: string;
   description?: string;
-}
-
-interface Status {
-  id: number;
-  name: string;
-  color: string;
+  status: string;
 }
 
 interface ProjectsResponse {
   results: Project[];
-}
-
-interface StatusesResponse {
-  results: Status[];
 }
 
 function ProjectList() {
@@ -38,12 +29,6 @@ function ProjectList() {
 
   const { data, error, isLoading } = useGetProjectsQuery<{
     data?: ProjectsResponse;
-    error?: any;
-    isLoading: boolean;
-  }>();
-
-  const { data: statusesData, isLoading: isStatusesLoading } = useGetAllProjectStatusesQuery<{
-    data?: StatusesResponse;
     error?: any;
     isLoading: boolean;
   }>();
@@ -85,7 +70,7 @@ function ProjectList() {
 
   const formatDate = (dateString: string): string => dayjs(dateString).format("DD/MM/YYYY");
 
-  if (isLoading || isStatusesLoading)
+  if (isLoading)
     return (
       <div style={centerContainerStyle}>
         <Spin size="large" tip="Đang tải dự án..." />
@@ -107,7 +92,6 @@ function ProjectList() {
     );
 
   const projects = Array.isArray(data?.results) ? data.results : [];
-  const projectStatuses = Array.isArray(statusesData?.results) ? statusesData.results : [];
 
   return (
     <div style={{ ...pagePaddingStyle, maxWidth: "1440px", margin: "0 auto" }}>
@@ -129,7 +113,6 @@ function ProjectList() {
       ) : (
         <Row gutter={[24, 24]} justify="center">
           {projects.map((project: Project) => {
-            const projectStatus = projectStatuses.find(status => status.id === parseInt(project.id));
             return (
               <Col key={project.id} xs={24} sm={12} lg={8} xl={6}>
                 <Card
@@ -171,7 +154,7 @@ function ProjectList() {
                       {project.description || "Không có mô tả"}
                     </div>
                     <div style={{ marginTop: "8px" }}>
-                      <Tag color={projectStatus?.color}>{projectStatus?.name}</Tag>
+                      <Tag>{project?.status}</Tag>
                     </div>
                   </Link>
                 </Card>

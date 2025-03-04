@@ -5,12 +5,16 @@ import {
   useGetSheetsQuery,
   useUpdateProjectStatusMutation,
   useDeleteSheetMutation,
+  useGetTasksQuery,
+  useDeleteTaskMutation,
   useGetAllProjectStatusesQuery,
 } from '@/api/app_project/app_project';
 import {
   AppstoreOutlined,
   PlusOutlined,
   SettingOutlined,
+  DeleteOutlined,
+  EditOutlined,
 } from '@ant-design/icons';
 import type { TabsProps } from 'antd';
 import {
@@ -20,6 +24,7 @@ import {
   Col,
   Descriptions,
   message,
+  Popconfirm,
   Row,
   Select,
   Spin,
@@ -32,6 +37,7 @@ import { useEffect, useState } from 'react';
 import AddSheets from './AddSheets';
 import SheetTable from './sheetTable';
 import { Option } from 'antd/es/mentions';
+import AddTasks from './AddTasks';
 
 interface Sheet {
   id: string;
@@ -50,48 +56,29 @@ interface ProjectDetail {
 }
 
 interface Status {
-  id: number;
+  id: string;
   name: string;
   color: string;
 }
-
-const columns = [
-  {
-    title: 'Công việc',
-    dataIndex: 'task',
-    key: 'task',
-  },
-  {
-    title: 'Người phụ trách',
-    dataIndex: 'assignee',
-    key: 'assignee',
-  },
-  {
-    title: 'Tiến độ',
-    dataIndex: 'progress',
-    key: 'progress',
-    render: (text: string) => <Tag color='blue'>{text}</Tag>,
-  },
-  {
-    title: 'Trạng thái',
-    dataIndex: 'status',
-    key: 'status',
-    render: (text: string) => (
-      <Tag color={text === 'Done' ? 'green' : 'volcano'}>{text}</Tag>
-    ),
-  },
-];
 
 function ProjectDetail() {
   const { id } = useParams();
   const router = useRouter();
   const projectId = Array.isArray(id) ? id[0] : id;
   const { data: sheetsData } = useGetSheetsQuery();
-  const { data: statusData, refetch: refetchStatus } = useGetProjectStatusQuery({ projectId });
-  const { data: allStatusesData } = useGetAllProjectStatusesQuery();
+  const { data: statusData, refetch: refetchStatus } = useGetProjectStatusQuery(
+    { projectId }
+  );
   const [updateProjectStatus] = useUpdateProjectStatusMutation();
   const [deleteSheet] = useDeleteSheetMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddTasksModalOpen, setIsAddTasksModalOpen] = useState(false);
+  const [sheets, setSheets] = useState<Sheet[]>([]);
+  const [sheetsId, setSheetsId] = useState<string>('settings');
+  const [tasksList, setTasksList] = useState<any[]>([]);
+  const [deleteTask] = useDeleteTaskMutation();
+  const { refetch: refetchTasks } = useGetTasksQuery();
+  const { data: allStatusesData } = useGetAllProjectStatusesQuery();
 
   const {
     data: project,
@@ -99,8 +86,9 @@ function ProjectDetail() {
     isLoading,
   } = useGetProjectDetailQuery(projectId);
 
-  const [sheets, setSheets] = useState<Sheet[]>([]);
+  const { data: tasksData } = useGetTasksQuery();
 
+  // Lấy danh sách sheets
   useEffect(() => {
     setSheets((prev) => {
       return sheetsData?.results.filter(
@@ -109,52 +97,102 @@ function ProjectDetail() {
     });
   }, [sheetsData]);
 
-  const handleDeleteSheet = async (sheetId: string) => {
+  // Lấy danh sách tasks
+  useEffect(() => {
+    setTasksList(() => {
+      return tasksData?.results.filter(
+        (item: any) => String(sheetsId) === String(item.sheet)
+      );
+    });
+  }, [sheetsId, tasksData]);
+
+  // Xóa task
+  const handleDeleteTask = async (taskId: string) => {
     try {
-      await deleteSheet({ id: sheetId });
-      message.success("Sheet đã được xóa.");
-      setSheets((prev) => prev.filter((sheet) => sheet.id !== sheetId));
+      await deleteTask({ id: taskId });
+      message.success('Task đã được xóa.');
+      refetchTasks();
     } catch (error) {
-      message.error("Xóa sheet thất bại.");
+      message.error('Xóa task thất bại.');
     }
+    refetchTasks();
   };
 
-  const addSheet = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleStatusChange = async (value: string) => {
-    let color = "";
-    if (value === "Completed") {
-      color = "#dD427a";
-    } else if (value === "In Progress") {
-      color = "#FFA500";
-    }
-
-    try {
-      await updateProjectStatus({ id: projectId, name: value, color, user: 1 });
-      message.success("Trạng thái dự án đã được cập nhật.");
-      refetchStatus(); // Refetch the status data to update the UI
-    } catch (error) {
-      message.error("Cập nhật trạng thái dự án thất bại.");
-    }
-  };
-
-  const items: TabsProps['items'] = [
+  const columns = [
     {
-      key: '1',
-      label: 'Công việc chung',
-      children: <Table columns={columns} dataSource={[]} />,
+      title: 'Công việc',
+      dataIndex: 'title',
+      key: 'title',
     },
+    {
+      title: 'Người phụ trách',
+      dataIndex: 'assignees_names',
+      key: 'assignees_names',
+      render: (text: string[]) => {
+        console.log(text);
+        return text.map((assignee: any) => {
+          return (
+            <div>
+              <p>{assignee}</p>
+            </div>
+          );
+        });
+      },
+    },
+    {
+      title: 'Ngày tạo',
+      dataIndex: 'created',
+      key: 'created',
+      render: (text: string) => {
+        const date = new Date(text);
+        return date.toLocaleDateString('vi-VN');
+      },
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
+      key: 'status',
+      render: (text: string) => (
+        <h1>{text === null ? 'Đang tiến hành' : 'Chưa xong'}</h1>
+      ),
+    },
+    {
+      title: 'Hành động',
+      dataIndex: 'action',
+      key: 'action',
+      render: (text: string, record: any) => (
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <Button type='primary' icon={<EditOutlined />}></Button>
+          <Popconfirm
+            title='Bạn có chắc chắn muốn xóa task này không?'
+            onConfirm={() => handleDeleteTask(record.id)}
+            okText='Yes'
+            cancelText='No'
+          >
+            <Button type='text' danger icon={<DeleteOutlined />}></Button>
+          </Popconfirm>
+        </div>
+      ),
+    },
+  ];
+  // Mục tabs trong project detail
+  const items: TabsProps['items'] = [
     ...(sheets?.map((sheet: Sheet) => ({
       key: sheet.id,
       label: sheet.name,
       children: (
-        <SheetTable
-          key={sheet.id}
-          sheet={sheet}
-          handleDeleteSheet={handleDeleteSheet}
-        />
+        <div>
+          <Popconfirm
+            title='Bạn có chắc chắn muốn xóa sheet này không?'
+            onConfirm={() => handleDeleteSheet(sheet.id)}
+            okText='Yes'
+            cancelText='No'
+          >
+            <Button type='primary' danger icon={<DeleteOutlined />}>
+              Xóa Sheet
+            </Button>
+          </Popconfirm>
+        </div>
       ),
     })) || []),
     {
@@ -163,6 +201,69 @@ function ProjectDetail() {
       children: <div>Cài đặt dự án</div>,
     },
   ];
+
+  // Gọi modal thêm sheet
+  const addSheet = () => {
+    setIsModalOpen(true);
+  };
+
+  // Gọi modal thêm tasks
+  const addTasks = () => {
+    setIsAddTasksModalOpen(true);
+  };
+
+  // Xóa sheet
+  const handleDeleteSheet = async (sheetId: string) => {
+    try {
+      await deleteSheet({ id: sheetId });
+      message.success('Sheet đã được xóa.');
+      setSheets((prev) => prev.filter((sheet) => sheet.id !== sheetId));
+    } catch (error) {
+      message.error('Xóa sheet thất bại.');
+    }
+  };
+
+  // Cập nhật trạng thái dự án
+  const handleStatusChange = async (value: string) => {
+    let color = '';
+    if (value === 'Completed') {
+      color = '#dD427a';
+    } else if (value === 'In Progress') {
+      color = '#FFA500';
+    }
+
+    try {
+      await updateProjectStatus({ id: projectId, name: value, color, user: 1 });
+      message.success('Trạng thái dự án đã được cập nhật.');
+      refetchStatus(); // Refetch the status data to update the UI
+    } catch (error) {
+      message.error('Cập nhật trạng thái dự án thất bại.');
+    }
+  };
+
+  // const items: TabsProps['items'] = [
+  //   {
+  //     key: '1',
+  //     label: 'Công việc chung',
+  //     children: <Table columns={columns} dataSource={[]} />,
+  //   },
+  //   ...(sheets?.map((sheet: Sheet) => ({
+  //     key: sheet.id,
+  //     label: sheet.name,
+  //     children: (
+  //       <SheetTable
+  //         key={sheet.id}
+  //         sheet={sheet}
+  //         handleDeleteSheet={handleDeleteSheet}
+  //       />
+  //     ),
+  //   })) || []),
+  //   {
+  //     key: 'settings',
+  //     label: <SettingOutlined />,
+  //     children: <div>Cài đặt dự án</div>,
+  //   },
+  // ];
 
   if (isLoading)
     return (
@@ -191,23 +292,40 @@ function ProjectDetail() {
         {/* Phần tabs và công việc */}
         <Col span={16}>
           <Tabs
-            defaultActiveKey='1'
+            defaultActiveKey='settings'
             items={items}
+            onChange={(key) => setSheetsId(key)}
             tabBarExtraContent={
-              <Button
-                type='primary'
-                icon={<PlusOutlined />}
-                style={{ marginRight: '20px' }}
-                onClick={addSheet}
-              >
-                Thêm Sheet
+              <>
+                <Button
+                  type='primary'
+                  icon={<PlusOutlined />}
+                  style={{ marginRight: '20px' }}
+                  onClick={addSheet}
+                >
+                  Thêm Sheet
+                </Button>
                 <AddSheets
                   isModalOpen={isModalOpen}
                   setIsModalOpen={setIsModalOpen}
                   setSheets={setSheets}
                   projectId={projectId}
                 />
-              </Button>
+                <Button
+                  type='primary'
+                  icon={<PlusOutlined />}
+                  style={{ marginRight: '20px' }}
+                  onClick={addTasks}
+                >
+                  Thêm tasks
+                </Button>
+                <AddTasks
+                  isAddTasksModalOpen={isAddTasksModalOpen}
+                  setIsAddTasksModalOpen={setIsAddTasksModalOpen}
+                  sheetsId={sheetsId}
+                  projectId={projectId}
+                />
+              </>
             }
             style={{
               background: '#fff',
@@ -217,7 +335,13 @@ function ProjectDetail() {
             }}
           />
         </Col>
-
+        <Col span={16}>
+          {sheetsId === 'settings' ? (
+            <></>
+          ) : (
+            <Table columns={columns} dataSource={tasksList} />
+          )}
+        </Col>
         {/* Phần thông tin dự án */}
         <Col span={8}>
           <Card
@@ -251,7 +375,7 @@ function ProjectDetail() {
                   ))}
                 </div>
               </Descriptions.Item>
-              <Descriptions.Item label="Trạng thái">
+              <Descriptions.Item label='Trạng thái'>
                 <Select
                   value={statusData?.name}
                   onChange={handleStatusChange}

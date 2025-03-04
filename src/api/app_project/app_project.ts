@@ -31,8 +31,8 @@ export const apiProject = createApi({
       providesTags: ['Status'],
     }),
     // Lấy trạng thái của dự án bằng id dự án
-    getProjectStatus: builder.query<any, { projectId: string }>({
-      query: ({ projectId }) => `project-status/${projectId}/`,
+    getProjectStatusQuery: builder.query<any, { projectId: string }>({
+      query: ({ projectId }) => `projects/${projectId}/`,
       providesTags: ['Status'],
     }),
     getSheets: builder.query<any, void>({
@@ -78,14 +78,11 @@ export const apiProject = createApi({
         body: data,
       }),
     }),
-    updateProjectStatus: builder.mutation<
-      any,
-      { id: string; name: string; color: string; user: number }
-    >({
-      query: ({ id, name, color, user }) => ({
-        url: `project-status/${id}/`,
-        method: 'PUT',
-        body: { name, color, user },
+    updateProjectStatus: builder.mutation<any, { id: string; status: string }>({
+      query: ({ id, status }) => ({
+        url: `projects/${id}/`,
+        method: 'PATCH',
+        body: { status },
       }),
       invalidatesTags: ['Project'],
     }),
@@ -127,7 +124,6 @@ export const apiProject = createApi({
 export const {
   useGetProjectsQuery,
   useGetProjectDetailQuery,
-  useGetProjectStatusQuery,
   useGetAllProjectStatusesQuery,
   useGetSheetsQuery,
   useGetStatusesQuery,

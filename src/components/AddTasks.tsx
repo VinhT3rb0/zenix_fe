@@ -85,8 +85,6 @@ const AddTasks = ({
             mode='multiple'
             onSelect={(value: any) => {
               setAssignee((prev: any[]) => [...prev, value]);
-              console.log(assignee);
-              console.log(value);
             }}
           >
             {users?.results?.map((user: any) => (

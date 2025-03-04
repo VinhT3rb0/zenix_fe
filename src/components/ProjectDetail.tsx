@@ -1,20 +1,19 @@
 'use client';
 import {
-  useGetProjectDetailQuery,
-  useGetProjectStatusQuery,
-  useGetSheetsQuery,
-  useUpdateProjectStatusMutation,
   useDeleteSheetMutation,
-  useGetTasksQuery,
   useDeleteTaskMutation,
   useGetAllProjectStatusesQuery,
+  useGetProjectDetailQuery,
+  useGetSheetsQuery,
+  useGetTasksQuery,
+  useUpdateProjectStatusMutation,
 } from '@/api/app_project/app_project';
 import {
   AppstoreOutlined,
-  PlusOutlined,
-  SettingOutlined,
   DeleteOutlined,
   EditOutlined,
+  PlusOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import type { TabsProps } from 'antd';
 import {
@@ -32,11 +31,10 @@ import {
   Tabs,
   Tag,
 } from 'antd';
+import { Option } from 'antd/es/mentions';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AddSheets from './AddSheets';
-import SheetTable from './sheetTable';
-import { Option } from 'antd/es/mentions';
 import AddTasks from './AddTasks';
 
 interface Sheet {
@@ -66,9 +64,8 @@ function ProjectDetail() {
   const router = useRouter();
   const projectId = Array.isArray(id) ? id[0] : id;
   const { data: sheetsData } = useGetSheetsQuery();
-  const { data: statusData, refetch: refetchStatus } = useGetProjectStatusQuery(
-    { projectId }
-  );
+  const { data: statusData, refetch: refetchStatus } =
+    useGetProjectDetailQuery(projectId);
   const [updateProjectStatus] = useUpdateProjectStatusMutation();
   const [deleteSheet] = useDeleteSheetMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -233,37 +230,13 @@ function ProjectDetail() {
     }
 
     try {
-      await updateProjectStatus({ id: projectId, name: value, color, user: 1 });
+      await updateProjectStatus({ id: projectId, status: value });
       message.success('Trạng thái dự án đã được cập nhật.');
       refetchStatus(); // Refetch the status data to update the UI
     } catch (error) {
       message.error('Cập nhật trạng thái dự án thất bại.');
     }
   };
-
-  // const items: TabsProps['items'] = [
-  //   {
-  //     key: '1',
-  //     label: 'Công việc chung',
-  //     children: <Table columns={columns} dataSource={[]} />,
-  //   },
-  //   ...(sheets?.map((sheet: Sheet) => ({
-  //     key: sheet.id,
-  //     label: sheet.name,
-  //     children: (
-  //       <SheetTable
-  //         key={sheet.id}
-  //         sheet={sheet}
-  //         handleDeleteSheet={handleDeleteSheet}
-  //       />
-  //     ),
-  //   })) || []),
-  //   {
-  //     key: 'settings',
-  //     label: <SettingOutlined />,
-  //     children: <div>Cài đặt dự án</div>,
-  //   },
-  // ];
 
   if (isLoading)
     return (
@@ -377,12 +350,13 @@ function ProjectDetail() {
               </Descriptions.Item>
               <Descriptions.Item label='Trạng thái'>
                 <Select
-                  value={statusData?.name}
+                  value={statusData?.status_detail?.name}
+                  placeholder='Chọn trạng thái dự án'
                   onChange={handleStatusChange}
                   style={{ width: '100%' }}
                 >
                   {allStatusesData?.results.map((status: Status) => (
-                    <Option key={status.id} value={status.name}>
+                    <Option key={status.id} value={status.id}>
                       {status.name}
                     </Option>
                   ))}

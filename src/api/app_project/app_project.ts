@@ -39,8 +39,13 @@ export const apiProject = createApi({
       query: () => 'sheets/',
       providesTags: ['Sheet'],
     }),
+    // lấy trạng thái của task
     getStatuses: builder.query<any, void>({
       query: () => 'statuses/',
+      providesTags: ['Status'],
+    }),
+    getStatusesById: builder.query<any, { id: string }>({
+      query: ({ id }) => `statuses/${id}/`,
       providesTags: ['Status'],
     }),
     getTasks: builder.query<any, void>({
@@ -97,6 +102,14 @@ export const apiProject = createApi({
       }),
       invalidatesTags: ['Project'],
     }),
+    updateTask: builder.mutation<any, { id: string; title: string; assignees_names: string[]; status: number }>({
+      query: ({ id, ...data }) => ({
+        url: `tasks/${id}/`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Task'],
+    }),
     deleteProject: builder.mutation<any, { id: string }>({
       query: ({ id }) => ({
         url: `projects/${id}/`,
@@ -132,9 +145,11 @@ export const {
   useCreateProjectMutation,
   useUpdateProjectStatusMutation,
   useUpdateProjectMutation,
+  useUpdateTaskMutation,
   useCreateSheetsMutation,
   useCreateTasksMutation,
   useDeleteProjectMutation,
   useDeleteSheetMutation,
   useDeleteTaskMutation,
+  useGetStatusesByIdQuery,
 } = apiProject;

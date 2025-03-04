@@ -1,10 +1,10 @@
 'use client';
 import {
+  useGetProjectDetailQuery,
+  useGetSheetsQuery,
   useDeleteSheetMutation,
   useDeleteTaskMutation,
   useGetAllProjectStatusesQuery,
-  useGetProjectDetailQuery,
-  useGetSheetsQuery,
   useGetTasksQuery,
   useUpdateProjectStatusMutation,
 } from '@/api/app_project/app_project';
@@ -31,11 +31,12 @@ import {
   Tabs,
   Tag,
 } from 'antd';
-import { Option } from 'antd/es/mentions';
-import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AddSheets from './AddSheets';
+import { useParams } from 'next/navigation';
+import { Option } from 'antd/es/mentions';
 import AddTasks from './AddTasks';
+import EditTaskModal from './EditTaskModal';
 
 interface Sheet {
   id: string;
@@ -61,7 +62,6 @@ interface Status {
 
 function ProjectDetail() {
   const { id } = useParams();
-  const router = useRouter();
   const projectId = Array.isArray(id) ? id[0] : id;
   const { data: sheetsData } = useGetSheetsQuery();
   const { data: statusData, refetch: refetchStatus } =
@@ -70,13 +70,14 @@ function ProjectDetail() {
   const [deleteSheet] = useDeleteSheetMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddTasksModalOpen, setIsAddTasksModalOpen] = useState(false);
+  const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
   const [sheets, setSheets] = useState<Sheet[]>([]);
   const [sheetsId, setSheetsId] = useState<string>('settings');
   const [tasksList, setTasksList] = useState<any[]>([]);
   const [deleteTask] = useDeleteTaskMutation();
   const { refetch: refetchTasks } = useGetTasksQuery();
   const { data: allStatusesData } = useGetAllProjectStatusesQuery();
-
   const {
     data: project,
     error,
@@ -84,6 +85,8 @@ function ProjectDetail() {
   } = useGetProjectDetailQuery(projectId);
 
   const { data: tasksData } = useGetTasksQuery();
+  const [projectStatusName, setProjectStatusName] = useState<string | null>(null);
+
 
   // Lấy danh sách sheets
   useEffect(() => {
@@ -126,7 +129,6 @@ function ProjectDetail() {
       dataIndex: 'assignees_names',
       key: 'assignees_names',
       render: (text: string[]) => {
-        console.log(text);
         return text.map((assignee: any) => {
           return (
             <div>
@@ -135,6 +137,11 @@ function ProjectDetail() {
           );
         });
       },
+    },
+    {
+      title: 'Mô tả',
+      dataIndex: 'description',
+      key: 'description',
     },
     {
       title: 'Ngày tạo',
@@ -146,12 +153,22 @@ function ProjectDetail() {
       },
     },
     {
+      title: 'Ngày kết thúc',
+      dataIndex: 'deadline',
+      key: 'deadline',
+      render: (text: string) => {
+        const date = new Date(text);
+        return date.toLocaleDateString('vi-VN');
+      },
+    },
+    {
       title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (text: string) => (
-        <h1>{text === null ? 'Đang tiến hành' : 'Chưa xong'}</h1>
-      ),
+      dataIndex: 'status_detail',
+      key: 'status_detail',
+      render: (text: any) => {
+
+        return <span>{text?.name}</span>;
+      }
     },
     {
       title: 'Hành động',
@@ -159,7 +176,13 @@ function ProjectDetail() {
       key: 'action',
       render: (text: string, record: any) => (
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Button type='primary' icon={<EditOutlined />}></Button>
+          <Button
+            type='primary'
+            onClick={() => {
+              setSelectedTask(record);
+              setIsEditTaskModalOpen(true);
+            }}
+            icon={<EditOutlined />}></Button>
           <Popconfirm
             title='Bạn có chắc chắn muốn xóa task này không?'
             onConfirm={() => handleDeleteTask(record.id)}
@@ -220,19 +243,10 @@ function ProjectDetail() {
     }
   };
 
-  // Cập nhật trạng thái dự án
-  const handleStatusChange = async (value: string) => {
-    let color = '';
-    if (value === 'Completed') {
-      color = '#dD427a';
-    } else if (value === 'In Progress') {
-      color = '#FFA500';
-    }
-
+  const handleStatusChange = async (value: number) => {
     try {
-      await updateProjectStatus({ id: projectId, status: value });
+      await updateProjectStatus({ id: projectId, status: value.toString() });
       message.success('Trạng thái dự án đã được cập nhật.');
-      refetchStatus(); // Refetch the status data to update the UI
     } catch (error) {
       message.error('Cập nhật trạng thái dự án thất bại.');
     }
@@ -366,6 +380,13 @@ function ProjectDetail() {
           </Card>
         </Col>
       </Row>
+      <EditTaskModal
+        visible={isEditTaskModalOpen}
+        onClose={() => setIsEditTaskModalOpen(false)}
+        task={selectedTask}
+        projectId={projectId}
+        sheetId={sheetsId} />
+
     </div>
   );
 }

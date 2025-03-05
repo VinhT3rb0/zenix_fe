@@ -31,6 +31,7 @@ interface Project {
   end_date: string;
   description?: string;
   status: string;
+  image?: string;
   status_detail: {
     id: number;
     name: string;
@@ -38,16 +39,6 @@ interface Project {
   };
 }
 
-interface Status {
-  id: number;
-  name: string;
-  color: string;
-  status_detail: {
-    id: number;
-    name: string;
-    color: string;
-  };
-}
 
 interface ProjectsResponse {
   results: Project[];
@@ -147,7 +138,7 @@ function ProjectList() {
           style={alertStyle}
         />
       ) : (
-        <Row gutter={[24, 24]} justify='center'>
+        <Row gutter={[24, 24]} justify='start'>
           {projects.map((project: Project) => {
             return (
               <Col key={project.id} xs={24} sm={12} lg={8} xl={6}>
@@ -157,12 +148,26 @@ function ProjectList() {
                     ...cardStyle,
                     background: colorBgContainer,
                     borderRadius: borderRadiusLG,
+                    height: '100%',
                   }}
                   bodyStyle={cardBodyStyle}
                   cover={
-                    <div style={cardHeaderStyle(colorPrimary)}>
-                      <ProjectOutlined style={projectIconStyle} />
-                    </div>
+                    project.image ? (
+                      <img
+                        src={project.image} // Hiển thị ảnh từ trường image
+                        alt={project.name}
+                        style={{
+                          height: '120px',
+                          objectFit: 'cover', // Đảm bảo ảnh không bị méo
+                          width: '100%',
+                          borderRadius: `${borderRadiusLG}px ${borderRadiusLG}px 0 0`, // Bo góc phía trên
+                        }}
+                      />
+                    ) : (
+                      <div style={cardHeaderStyle(colorPrimary)}>
+                        <ProjectOutlined style={projectIconStyle} />
+                      </div>
+                    )
                   }
                   actions={[
                     <Button type='link' onClick={() => showModal(project)}>
@@ -198,7 +203,6 @@ function ProjectList() {
                       {project.description || 'Không có mô tả'}
                     </div>
                     <div style={{ marginTop: '8px' }}>
-                      {/* status */}
                       <Tag color={project?.status_detail?.color}>
                         {project?.status_detail?.name}
                       </Tag>
@@ -294,6 +298,7 @@ const dateItemStyle: CSSProperties = {
   alignItems: 'center',
 };
 
+
 const descriptionStyle: CSSProperties = {
   color: '#666',
   lineHeight: 1.6,
@@ -302,8 +307,7 @@ const descriptionStyle: CSSProperties = {
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   display: '-webkit-box',
-  WebkitLineClamp: 3,
+  WebkitLineClamp: 3, // Giới hạn hiển thị 3 dòng
   WebkitBoxOrient: 'vertical',
 };
-
 export default ProjectList;

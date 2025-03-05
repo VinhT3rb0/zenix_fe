@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Button } from 'antd';
+import { Modal, Form, Input, Select, Button, DatePicker } from 'antd';
 import {
   useGetStatusesQuery,
   useUpdateTaskMutation,
 } from '@/api/app_project/app_project';
 import { useGetAllUsersQuery } from '@/api/app_home/app_home';
+import dayjs from 'dayjs';
 
 const { Option } = Select;
 
@@ -29,7 +30,6 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
   const [updateTask] = useUpdateTaskMutation();
   const [assignees, setAssignees] = useState<any[]>([]);
 
-  console.log(task);
 
   useEffect(() => {
     if (task) {
@@ -38,23 +38,33 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
         assignees: task.assignees,
         description: task.description,
         status: task.status,
+        start_date: task.start_date ? dayjs(task.start_date) : null,
+        deadline: task.deadline ? dayjs(task.deadline) : null,
       });
     }
   }, [task, form]);
 
   const handleUpdate = async (values: any) => {
     try {
+      const formattedValues = {
+        ...values,
+        start_date: values.start_date ? values.start_date.format('YYYY-MM-DD') : null,
+        deadline: values.deadline ? values.deadline.format('YYYY-MM-DD') : null,
+      };
+
       await updateTask({
         id: task.id,
         project: projectId,
         sheet: sheetId,
-        ...values,
+        ...formattedValues,
       });
+
       onClose();
     } catch (error) {
       console.error('Failed to update task:', error);
     }
   };
+
 
   return (
     <Modal
@@ -115,6 +125,20 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
               </Option>
             ))}
           </Select>
+        </Form.Item>
+        <Form.Item
+          name='start_date'
+          label='Ngày bắt đầu'
+          rules={[{ required: true, message: 'Vui lòng chọn ngày bắt đầu' }]}
+        >
+          <DatePicker format='YYYY-MM-DD' />
+        </Form.Item>
+        <Form.Item
+          name='deadline'
+          label='Ngày kết thúc'
+          rules={[{ required: true, message: 'Vui lòng chọn ngày kết thúc' }]}
+        >
+          <DatePicker format='YYYY-MM-DD' />
         </Form.Item>
       </Form>
     </Modal>

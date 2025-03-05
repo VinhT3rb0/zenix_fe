@@ -85,6 +85,7 @@ function ProjectDetail() {
   } = useGetProjectDetailQuery(projectId);
 
   const { data: tasksData } = useGetTasksQuery();
+
   const [projectStatusName, setProjectStatusName] = useState<string | null>(null);
 
 
@@ -106,6 +107,9 @@ function ProjectDetail() {
     });
   }, [sheetsId, tasksData]);
 
+  const filteredTasks = tasksData?.results.filter(
+    (task: any) => String(task.project) === String(projectId)
+  );
   // Xóa task
   const handleDeleteTask = async (taskId: string) => {
     try {
@@ -167,8 +171,9 @@ function ProjectDetail() {
       key: 'status_detail',
       render: (text: any) => {
 
-        return <span>{text?.name}</span>;
-      }
+        return <Tag color={text?.color}>{text?.name}</Tag>;
+      },
+      width: '10%',
     },
     {
       title: 'Hành động',
@@ -197,6 +202,10 @@ function ProjectDetail() {
   ];
   // Mục tabs trong project detail
   const items: TabsProps['items'] = [
+    {
+      key: 'common-task',
+      label: 'Công việc chung',
+    },
     ...(sheets?.map((sheet: Sheet) => ({
       key: sheet.id,
       label: sheet.name,
@@ -321,14 +330,15 @@ function ProjectDetail() {
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
             }}
           />
-        </Col>
-        <Col span={16}>
           {sheetsId === 'settings' ? (
             <></>
+          ) : sheetsId === 'common-task' ? (
+            <Table columns={columns} dataSource={filteredTasks} />
           ) : (
             <Table columns={columns} dataSource={tasksList} />
           )}
         </Col>
+
         {/* Phần thông tin dự án */}
         <Col span={8}>
           <Card

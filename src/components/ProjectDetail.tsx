@@ -38,6 +38,7 @@ import { useParams } from 'next/navigation';
 import { Option } from 'antd/es/mentions';
 import AddTasks from './AddTasks';
 import EditTaskModal from './EditTaskModal';
+import Link from 'next/link';
 
 interface Sheet {
   id: string;
@@ -126,6 +127,16 @@ function ProjectDetail() {
     refetchTasks();
   };
 
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+  });
+
+  // Xử lý khi thay đổi trang hoặc kích thước trang
+  const handleTableChange = (newPagination: any) => {
+    setPagination(newPagination);
+  };
+
   const columns = [
     {
       title: 'Công việc',
@@ -136,26 +147,23 @@ function ProjectDetail() {
       title: 'Người phụ trách',
       dataIndex: 'assignees',
       key: 'assignees',
-      // render: (text: string[]) => {
-      //   return text.map((assignee: any) => {
-      //     return (
-      //       <div>
-      //         <p>{assignee}</p>
-      //       </div>
-      //     );
-      //   });
-      // },
-
       render: (text: string[]) => {
         return text.map((assignee: any) => {
           const user = usersData?.results.find(
             (user: any) => user.id === assignee
           );
-
           return <Tag color='blue'>{user?.staff_str?.full_name}</Tag>;
         });
       },
       width: '30%',
+      // Add a filter for 'Người phụ trách'
+      filters: usersData?.results.map((user: any) => ({
+        text: user.staff_str.full_name,
+        value: user.id,
+      })),
+      onFilter: (value: string | number | boolean, record: any) =>
+        record.assignees.includes(value.toString()),  // Filter based on assignee ID
+      filterSearch: true,  // Enabling search inside the filter dropdown
     },
     {
       title: 'Mô tả',
@@ -188,6 +196,13 @@ function ProjectDetail() {
         return <Tag color={text?.color}>{text?.name}</Tag>;
       },
       width: '10%',
+      // Add a filter for 'Trạng thái'
+      filters: allStatusesData?.results.map((status: Status) => ({
+        text: status.name,
+        value: status.id,
+      })),
+      onFilter: (value: string | number | boolean, record: any) =>
+        record.status_detail.id === value,  // Filter by status ID
     },
     {
       title: 'Hành động',
@@ -348,9 +363,31 @@ function ProjectDetail() {
           {sheetsId === 'settings' ? (
             <></>
           ) : sheetsId === 'common-task' ? (
-            <Table columns={columns} dataSource={filteredTasks} />
+            <Table columns={columns}
+              dataSource={filteredTasks}
+              pagination={{
+                ...pagination,
+                total: filteredTasks?.length || 0,
+                showSizeChanger: true,
+                pageSizeOptions: ["10", "20", "50", "100", "200"],
+              }}
+              bordered
+              onChange={handleTableChange}
+              loading={isLoading}
+            />
           ) : (
-            <Table columns={columns} dataSource={tasksList} />
+            <Table columns={columns}
+              dataSource={tasksList}
+              pagination={{
+                ...pagination,
+                total: tasksList?.length || 0,
+                showSizeChanger: true,
+                pageSizeOptions: ["10", "20", "50", "100", "200"],
+              }}
+              bordered
+              onChange={handleTableChange}
+              loading={isLoading}
+            />
           )}
         </Col>
 
@@ -376,7 +413,7 @@ function ProjectDetail() {
                 {project?.description}
               </Descriptions.Item>
               <Descriptions.Item label='Người tạo'>
-                {project?.user}
+                {project?.user_str}
               </Descriptions.Item>
               <Descriptions.Item label='Trạng thái'>
                 <Select
@@ -393,6 +430,9 @@ function ProjectDetail() {
                 </Select>
               </Descriptions.Item>
             </Descriptions>
+            <Link href={`/project/`}>
+              <Button type="link">Quay lại danh sách dự án</Button>
+            </Link>
           </Card>
         </Col>
       </Row>

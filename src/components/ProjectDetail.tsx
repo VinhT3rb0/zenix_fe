@@ -8,6 +8,7 @@ import {
   useGetTasksQuery,
   useUpdateProjectStatusMutation,
 } from '@/api/app_project/app_project';
+import { useGetAllUsersQuery } from '@/api/app_home/app_home';
 import {
   AppstoreOutlined,
   DeleteOutlined,
@@ -86,8 +87,11 @@ function ProjectDetail() {
 
   const { data: tasksData } = useGetTasksQuery();
 
-  const [projectStatusName, setProjectStatusName] = useState<string | null>(null);
+  const { data: usersData } = useGetAllUsersQuery();
 
+  const [projectStatusName, setProjectStatusName] = useState<string | null>(
+    null
+  );
 
   // Lấy danh sách sheets
   useEffect(() => {
@@ -130,17 +134,28 @@ function ProjectDetail() {
     },
     {
       title: 'Người phụ trách',
-      dataIndex: 'assignees_names',
-      key: 'assignees_names',
+      dataIndex: 'assignees',
+      key: 'assignees',
+      // render: (text: string[]) => {
+      //   return text.map((assignee: any) => {
+      //     return (
+      //       <div>
+      //         <p>{assignee}</p>
+      //       </div>
+      //     );
+      //   });
+      // },
+
       render: (text: string[]) => {
         return text.map((assignee: any) => {
-          return (
-            <div>
-              <p>{assignee}</p>
-            </div>
+          const user = usersData?.results.find(
+            (user: any) => user.id === assignee
           );
+
+          return <Tag color='blue'>{user?.staff_str?.full_name}</Tag>;
         });
       },
+      width: '30%',
     },
     {
       title: 'Mô tả',
@@ -170,7 +185,6 @@ function ProjectDetail() {
       dataIndex: 'status_detail',
       key: 'status_detail',
       render: (text: any) => {
-
         return <Tag color={text?.color}>{text?.name}</Tag>;
       },
       width: '10%',
@@ -187,7 +201,8 @@ function ProjectDetail() {
               setSelectedTask(record);
               setIsEditTaskModalOpen(true);
             }}
-            icon={<EditOutlined />}></Button>
+            icon={<EditOutlined />}
+          ></Button>
           <Popconfirm
             title='Bạn có chắc chắn muốn xóa task này không?'
             onConfirm={() => handleDeleteTask(record.id)}
@@ -363,15 +378,6 @@ function ProjectDetail() {
               <Descriptions.Item label='Người tạo'>
                 {project?.user}
               </Descriptions.Item>
-              <Descriptions.Item label='Thành viên'>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                  {project?.team_members?.map((member: string) => (
-                    <Tag key={member} color='blue'>
-                      {member}
-                    </Tag>
-                  ))}
-                </div>
-              </Descriptions.Item>
               <Descriptions.Item label='Trạng thái'>
                 <Select
                   value={statusData?.status_detail?.name}
@@ -395,8 +401,8 @@ function ProjectDetail() {
         onClose={() => setIsEditTaskModalOpen(false)}
         task={selectedTask}
         projectId={projectId}
-        sheetId={sheetsId} />
-
+        sheetId={sheetsId}
+      />
     </div>
   );
 }
